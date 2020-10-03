@@ -2,21 +2,30 @@ import socket
 """ it will be revieved from client
 0 Initialize. 
 1 File create.
+    file name
 2 File read. 
+    file name
 3 File write. 
+    file
 4 File delete.
+    file name
 5 File info. 
+    file name
 6 File copy. 
+    file name
 7 File move. 
+    file name & path
 8 Open directory.
+    directory name
 9 Read directory.
+    directory name
 10 Make directory.
+    directory name
 11 Delete directory.
-"""
+    directory name"""
 
 # server receive
-
-
+# it will receive command number and argument
 server_socket = socket.socket(socket.AF_INET,
                               socket.SOCK_STREAM)
 server_addr = ("10.0.15.50", 22)
@@ -29,6 +38,8 @@ print(msg)
 # close
 server_socket.close()
 
+temp = msg
+msg, argument = msg.split("_") # argument is file name, directort name and etc.
 if msg != 11:
     '''
 

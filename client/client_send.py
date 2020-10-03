@@ -1,19 +1,30 @@
 import socket
 import sys
-
+import os
 """ it will be read from sys.argv[0]
 0 Initialize. 
 1 File create.
+	file name
 2 File read. 
+	file name
 3 File write. 
+	file
 4 File delete.
+	file name
 5 File info. 
+	file name
 6 File copy. 
+	file name
 7 File move. 
+	file name & path
 8 Open directory.
+	directory name
 9 Read directory.
+	directory name
 10 Make directory.
+	directory name
 11 Delete directory.
+	directory name
 """
 
 # client send
@@ -22,6 +33,13 @@ client_socket = socket.socket(socket.AF_INET,
 server_addr = ("10.0.15.50", 22)
 client_socket.connect(server_addr)
 command = sys.argv[1]
+try:
+	additional_arg = sys.argv[2]
+except:
+	additional_arg = None 
+temp = command
+command = str(temp) + '_'
+command += additional_arg	
 client_socket.send(bytes(command, "utf8"))
 print('Sent!')
 
@@ -57,7 +75,7 @@ server_socket.close()
 
 msg = client_socket.recv(1024)
 if msg != 2:
-    print(msg)
+    print ("File downloaded succesfully" )
 elif msg == 11:
     # recieve confirmation
     server_socket = socket.socket(socket.AF_INET,
@@ -78,7 +96,4 @@ elif msg == 11:
     client_socket.send(bytes(command, "utf8"))
     client_socket.close()
 else:
-    '''
-        do smth with the received file
-    '''
-    pass
+    print(msg)
