@@ -22,7 +22,8 @@ import socket
 10 Make directory.
     directory name
 11 Delete directory.
-    directory name"""
+    directory name
+"""
 
 # server receive
 # it will receive command number and argument
@@ -40,7 +41,18 @@ server_socket.close()
 
 temp = msg
 msg, argument = msg.split("_") # argument is file name, directort name and etc.
+
 if msg != 11:
+    if msg == 3:
+        # server receive
+
+        '''
+
+        receive file for command 3
+
+    
+        '''
+        pass
     '''
 
     do smth with the command from msg

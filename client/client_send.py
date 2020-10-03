@@ -27,24 +27,52 @@ import os
 	directory name
 """
 
-# client send
-client_socket = socket.socket(socket.AF_INET,
-                              socket.SOCK_STREAM)
-server_addr = ("10.0.15.50", 22)
-client_socket.connect(server_addr)
-command = sys.argv[1]
-try:
-	additional_arg = sys.argv[2]
-except:
-	additional_arg = None 
-temp = command
-command = str(temp) + '_'
-command += additional_arg	
-client_socket.send(bytes(command, "utf8"))
-print('Sent!')
+if sys.argv[1] != 3:
+	# client send
+	client_socket = socket.socket(socket.AF_INET,
+	                              socket.SOCK_STREAM)
+	server_addr = ("10.0.15.50", 22)
+	client_socket.connect(server_addr)
+	command = sys.argv[1]
+	try:
+		additional_arg = sys.argv[2]
+	except:
+		additional_arg = '' 
+	temp = command
+	command = str(temp) + '_'
+	command += additional_arg	
+	client_socket.send(bytes(command, "utf8"))
+	print('Sent!')
 
-# close
-client_socket.close()
+	# close
+	client_socket.close()
+else:
+	# client send 3
+	client_socket = socket.socket(socket.AF_INET,
+	                              socket.SOCK_STREAM)
+	server_addr = ("10.0.15.50", 22)
+	client_socket.connect(server_addr)
+	command = sys.argv[1]	
+	temp = command
+	command = str(temp) + '_'
+	client_socket.send(bytes(command, "utf8"))
+	print('Sent!')
+	client_socket.close()
+
+
+	# client send file
+	client_socket = socket.socket(socket.AF_INET,
+	                              socket.SOCK_STREAM)
+	server_addr = ("10.0.15.50", 22)
+	client_socket.connect(server_addr)
+	filename = sys.argv[2]
+	filesize = os.path.getsize(filename)
+	client_socket.send("{}{}{}".format(filename, sep, filesize).encode())
+
+	print('Sent!')
+
+	# close
+	client_socket.close()
 
 ''' what to receive 
 0 text - available size
