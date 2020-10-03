@@ -1,0 +1,5 @@
+// client configuration file
+
+{
+	"datanodes": [{"host": "datanode1_hostname",}, {"host": "datanode1_hostname",}]
+}
