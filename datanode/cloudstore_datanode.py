@@ -3,6 +3,7 @@
 
 import socket
 import os
+import shutil
 
 WORKING_DIR = '/home/vagrant'
 MAIN_DIR = ''
@@ -24,33 +25,6 @@ namenode_datanode_socket.bind(datanode_addr)
 namenode_datanode_socket.listen(1000)
 
 
-
-
-# (namenode_socket, addr) = namenode_datanode_socket.accept()
-# msg = namenode_socket.recv(1024)
-
-# decoded_msg = str(msg, "utf8")
-
-# if 'init' == decoded_msg.split()[0]:
-# 	new_dir_name = decoded_msg.split()[-1]
-
-# 	current_dir = os.listdir()
-
-# 	# clear directory
-# 	# if MAIN_DIR in current_dir:
-# 	# 	os.rmdir(MAIN_DIR)
-
-# 	# clear for testing
-# 	for item in os.listdir():
-# 		if not os.path.isfile(item) and item[0] != '.' :
-# 			os.rmdir(item)
-
-# 	# add new directory
-# 	os.mkdir(new_dir_name)
-# 	MAIN_DIR = new_dir_name
-# else:
-# 	print("UNKNOWN COMMAND")
-
 def create_main_dir(decoded_msg):
 
 	global MAIN_DIR
@@ -66,7 +40,10 @@ def create_main_dir(decoded_msg):
 	# clear for testing
 	for item in os.listdir():
 		if not os.path.isfile(item) and item[0] != '.' :
-			os.rmdir(item)
+			try:
+				shutil.rmtree(item)
+			except:
+				print('[w] Tried delete {}, but something goes wrong'.format(item))
 
 	# add new directory
 	os.mkdir(new_dir_name)
@@ -75,13 +52,35 @@ def create_main_dir(decoded_msg):
 
 def create_file(decoded_msg):
 	new_file_name = decoded_msg.split()[-1]
-	print('[!] CREATE FILE {}'.format(new_file_name))
 	open(WORKING_DIR+new_file_name, 'w').close()
+	print('[!] CREATE FILE {}'.format(new_file_name))
 
 def delete_file(decoded_msg):
 	file_name = decoded_msg.split()[-1]
+	os.remove(WORKING_DIR+file_name)
 	print('[!] DELETE FILE {}'.format(file_name))
-	os.remove(file_name)
+
+def create_dir(decoded_msg):
+	dir_path = decoded_msg.split()[-1]
+	try:
+		os.mkdir(dir_path[1:])
+		print('[!] CREATE DIRECTORY {}'.format(dir_path))
+	except:
+		print('[w] CANNOT CREATE DIRECTORY {}'.format(dir_path))
+
+def rmdir(decoded_msg):
+	dir_path = decoded_msg.split()[-1]
+	try:
+		shutil.rmtree(dir_path[1:])
+		print('[!] DELETE DIRECTORY {}'.format(dir_path))
+	except:
+		print('[w] CANNOT DELETE DIRECTORY {}'.format(dir_path))
+
+
+def logout(decoded_msg):
+
+	global MAIN_DIR
+	MAIN_DIR = ''
 
 
 def command_resolver(decoded_msg):
@@ -95,15 +94,22 @@ def command_resolver(decoded_msg):
 	else:
 		return {
 			'touch' in decoded_msg : create_file,
-			'rm' in decoded_msg : delete_file
+			'rm' in decoded_msg : delete_file,
+			'CODE_END_3085' in decoded_msg : logout,
+			'mkdir' in decoded_msg : create_dir,
+			'rmdir' in decoded_msg : rmdir,
 		}[True]
 
 
 while True:
 	(client_socket, addr) = namenode_datanode_socket.accept()
+	print('[!] GET NEW CONNECTION {}'.format(addr))
+	decoded_msg = ''
 	while True:
-		msg = client_socket.recv(4096)
+		msg = client_socket.recv(1024)
+
 		decoded_msg = str(msg, 'utf8')
+
 		if decoded_msg != '':
 			print('[] FOUND NEW COMMAND <{}>'.format(decoded_msg))
 			try:
@@ -111,7 +117,11 @@ while True:
 				print(function)
 				function(decoded_msg)
 			except:
-				print('Fuck, i dont know this command or i am stupid: ', decoded_msg)
+				print('Fuck, i dont know this command or i am stupid or i got end signal: ', decoded_msg)
+			print('-----------------')
+	print('-----------------')
+	print('[w] LOST CONNECTION WITH NAMENODE')
+	print('-----------------')
 
 
 
