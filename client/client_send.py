@@ -1,121 +1,169 @@
 import socket
 import sys
 import os
+import time
 
 """ it will be read from sys.argv[0]
 0 Initialize. 
 1 File create.
-	file name
+    file name
 2 File read. 
-	file name
+    file name
 3 File write. 
-	file
+    file
 4 File delete.
-	file name
+    file name
 5 File info. 
-	file name
+    file name
 6 File copy. 
-	file name
+    file name
 7 File move. 
-	file name & path
+    file name & path
 8 Open directory.
-	directory name
+    directory name
 9 Read directory.
-	directory name
+    directory name
 10 Make directory.
-	directory name
+    directory name
 11 Delete directory.
-	directory name
+    directory name
 """
 
-if sys.argv[1] != 3:
+command = sys.argv[1]
+try:
+    additional_arg = sys.argv[2]
+except:
+    additional_arg = ""
+
+try:
+    additional_arg_2 = sys.argv[3]  # path
+except:
+    additional_arg_2 = ""
+
+if command != "3" and command != "2":
     # client send
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_addr = ("10.0.15.50", 22)
+    server_addr = ("10.0.0.11", 2345)
     client_socket.connect(server_addr)
-    command = sys.argv[1]
-    try:
-        additional_arg = sys.argv[2]
-    except:
-        additional_arg = ""
-    temp = command
-    command = str(temp) + "_"
+
+    command = str(command) + "%"
     command += additional_arg
+    command = str(command) + "%"
+    command += additional_arg_2
     client_socket.send(bytes(command, "utf8"))
     print("Sent!")
+
+    """ what to receive 
+    0 text - available size
+    1 ok
+    2 FILE  
+    3 ok
+    4 ok
+    5 text - info 
+    6 ok
+    7 ok
+    8 ok 
+        should change directory in client too
+    9 text - list of files
+    10 ok
+    11 ok
+        need confirmation if there are files in the directory
+    """
+    # receive resonse
+    if sys.argv[1] != 2:
+        msg = ""
+        while msg == "":
+            # print(1)
+            msg = client_socket.recv(1024)
+
+        # confirmation for deleteing directory with files
+        decoded_msg = str(msg, "utf8")
+        print(decoded_msg)
+        if sys.argv[1] == "11":
+            temp = input()
+            client_socket.send(bytes(temp, "utf8"))
 
     # close
     client_socket.close()
-else:
-    # client send 3
+
+elif sys.argv[1] == "3":
+    # client send
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_addr = ("10.0.15.50", 22)
+    server_addr = ("10.0.0.11", 2345)
     client_socket.connect(server_addr)
-    command = sys.argv[1]
-    temp = command
-    command = str(temp) + "_"
+
+    command = str(command) + "%"
+    command += additional_arg
+    command = str(command) + "%"
+    command += additional_arg_2
     client_socket.send(bytes(command, "utf8"))
     print("Sent!")
     client_socket.close()
+    time.sleep(2)
+    # send FILE
+    ServerIp = "10.0.0.11"
+    s = socket.socket()
+    PORT = 9898
+    s.connect((ServerIp, PORT))
 
-    # client send file
-    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_addr = ("10.0.15.50", 22)
-    client_socket.connect(server_addr)
     filename = sys.argv[2]
-    filesize = os.path.getsize(filename)
-    client_socket.send("{}{}{}".format(filename, sep, filesize).encode())
+    # We can send file sample.txt
+    file = open(filename, "rb")
+    SendData = file.read(1024)
 
-    print("Sent!")
+    while SendData:
+        # Now we can receive data from server
+        # Now send the content of sample.txt to server
+        s.send(SendData)
+        SendData = file.read(1024)
 
-    # close
-    client_socket.close()
-
-""" what to receive 
-0 text - available size
-1 ok
-2 FILE  
-3 ok
-4 ok
-5 text - info 
-6 ok
-7 ok
-8 ok 
-    should change directory in client too
-9 text - list of files
-10 ok
-11 ok
-    need confirmation if there are files in the directory
-"""
-
-# client receive response
-server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server_addr = ("10.0.15.50", 22)
-server_socket.bind(server_addr)
-server_socket.listen(1000)
-(client_socket, addr) = server_socket.accept()
-server_socket.close()
-
-
-msg = client_socket.recv(1024)
-if msg != 2:
-    print("File downloaded succesfully")
-elif msg == 11:
-    # recieve confirmation
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_addr = ("10.0.15.50", 22)
-    server_socket.bind(server_addr)
-    server_socket.listen(1000)
-    (client_socket, addr) = server_socket.accept()
-    print(msg)
-    a = input
-    server_socket.close()
-    # send confirmation
-    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_addr = ("10.0.15.50", 22)
-    client_socket.connect(server_addr)
-    command = sys.argv[1]
-    client_socket.send(bytes(command, "utf8"))
-    client_socket.close()
+    # Close the connection from client side
+    s.close()
 else:
-    print(msg)
+    # client send
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_addr = ("10.0.0.11", 2345)
+    client_socket.connect(server_addr)
+
+    command = str(command) + "%"
+    command += additional_arg
+    command = str(command) + "%"
+    command += additional_arg_2
+    client_socket.send(bytes(command, "utf8"))
+    print("Sent!")
+    client_socket.close()
+
+    print("tuta")
+    s = socket.socket()
+
+    PORT = 9899
+    s.bind(("10.0.0.100", PORT))
+    s.listen(10)
+
+    # Now we can establish connection with clien
+    conn, addr = s.accept()
+
+    filename = "new_" + sys.argv[2]  # should take from client
+    # Open one recv.txt file in write mode
+    file = open(filename, "wb")
+    print("\n Copied file name will be {} at server side\n".format(filename))
+
+    while True:
+
+        # Receive any data from client side
+        RecvData = conn.recv(1024)
+        while RecvData:
+            file.write(RecvData)
+            RecvData = conn.recv(1024)
+
+        # Close the file opened at server side once copy is completed
+        file.close()
+        print("\n File has been copied successfully \n")
+
+        # Close connection with client
+        conn.close()
+        print("\n Server closed the connection \n")
+
+        # Come out from the infinite while loop as the file has been copied from client.
+        break
+    s.close()
