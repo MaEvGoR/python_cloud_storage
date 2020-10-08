@@ -89,7 +89,9 @@ while True:
             pass
         elif command == 1:
             # create file
-            pass
+            # create_file(namenode_datanode_sockets, argument1)
+            response = "File {} is created".format(argument1)
+            # pass
         elif command == 2:
             time.sleep(2)
             print("tuta")
@@ -151,55 +153,65 @@ while True:
             # pass
         elif command == 4:
             # delete file
-            pass
+            # delete_file(namenode_datanode_sockets, argument1)
+            response = "File {} deleted".format(argument1)
+            # pass
         elif command == 5:
             # get info of the file
+
             pass
         elif command == 6:
-            pass
+            #Create cope of the file
+            temp_name_file = argument1 + "-copy"
+            # create_file(namenode_datanode_sockets, temp_name_file)
+            response = "Copy of file {} created as {}".format(argument1, temp_name_file)
+            # pass
         elif command == 7:
+            #file move (filename, path)
             pass
         elif command == 8:
-            pass
+            #open directore / CD
+            # cd(argument1)
+            response = "Now you are in direcory {}".format(argument1)
+            # pass
         elif command == 9:
             # get list of files
-            pass
+            # files_list = files_list_in_dir(argument1)
+            # for i in files_list:
+            #     temp = str(i)
+            #     response = response + temp + " \n" 
+            response = "Files in the directory {}:".format(argument1) + response
         elif command == 10:
             # create directory
-            pass
+            # mkdir(namenode_datanode_sockets, argument1)
+            response = "Directory {} is created".format(argument1)
+            # pass
         elif command == 11:
-            response = (
-                "yes/no - Do you want to delete these files too?"  # + list of files
-            )
-            client_socket.send(bytes(response, "utf8"))
-            ans = client_socket.recv(1024)
-            decoded_ans = str(ans, "utf8")
-            print(decoded_ans)
+            #delete directory
+            files_check = check_dir_files(argument1)
+            #check if there are files in the dir
+            if files_check = 1:
+                files_list = files_list_in_dir(argument1)
+                for i in files_list:
+                    temp = str(i)
+                    response = response + temp + " \n" 
+                response = ("yes/no - Do you want to delete these files too? \n {}".format(files_list))  # + list of files
+                client_socket.send(bytes(response, "utf8"))
+                ans = client_socket.recv(1024)
+                decoded_ans = str(ans, "utf8")
+                print(decoded_ans)
+
             if decoded_ans == "yes":
                 # delete
+                rmdir(namenode_datanode_sockets, argument1)
                 print("Delete directory: {}".format(argument1))
-                pass
+                response = "Directory {} deleted with files \n {}".format{argument1, files_list}
+                # pass
             else:
                 print("Do not delete file: {}".format(argument1))
+                response = "Directory {} is not deleted".format{argument1}
 
-            pass
 
-        """ what to receive 
-        0 text - available size
-        1 ok
-        2 FILE  
-        3 ok
-        4 ok
-        5 text - info 
-        6 ok
-        7 ok
-        8 ok 
-            should change directory in client too
-        9 text - list of files
-        10 ok
-        11 ok
-            need confirmation if there are files in the directory
-        """
 
         # send response
         if command != 2 and command != 3:

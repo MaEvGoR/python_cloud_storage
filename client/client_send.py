@@ -29,7 +29,22 @@ import time
 11 Delete directory.
     directory name
 """
-
+""" what receive from namenode
+0 text - available size
+1 ok
+2 FILE  
+3 ok
+4 ok
+5 text - info 
+6 ok
+7 ok
+8 ok 
+    should change directory in client too
+9 text - list of files
+10 ok
+11 ok
+    need confirmation if there are files in the directory
+"""
 command = sys.argv[1]
 try:
     additional_arg = sys.argv[2]
