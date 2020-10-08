@@ -4,6 +4,9 @@
 import socket
 import os
 import shutil
+import tqdm
+import time
+from math import ceil
 
 WORKING_DIR = '/home/vagrant'
 MAIN_DIR = ''
@@ -76,6 +79,65 @@ def rmdir(decoded_msg):
 	except:
 		print('[w] CANNOT DELETE DIRECTORY {}'.format(dir_path))
 
+def send_file(decoded_msg, nsocket):
+	file_path = decoded_msg.split()[-1]
+	
+	# # start just for test
+	# with open(file_path[1:], 'w') as f:
+	# 	f.write('5'*100)
+	# # end just for test
+
+
+	file_size = os.path.getsize(file_path[1:])
+
+
+	try:
+		nsocket.send(bytes('{}<SEPARATOR>{}'.format(file_path, file_size), 'utf8'))
+
+		time.sleep(1)
+
+		progress = tqdm.tqdm(range(int(ceil(file_size/8))), "Sending {}".format(file_path), unit="B", unit_scale=True, unit_divisor=8)
+		with open(file_path[1:], 'rb') as f:
+			for _ in progress:
+				bytes_read = f.read(8)
+				
+				if not bytes_read:
+					break
+
+				nsocket.sendall(bytes_read)
+				progress.update(len(bytes_read))
+
+		print('[!] SEND FILE {}'.format(file_path))
+
+	except:
+		print('[w] CANNOT SEND FILE {}'.format(file_path))
+
+def download_file(decoded_msg, nsocket):
+	file_path = decoded_msg.split()[-1]
+
+	info_msg = str(nsocket.recv(1024), 'utf8')
+	filename, filesize = info_msg.split('<SEPARATOR>')
+
+	filesize = int(filesize)
+
+	print('[!] GET INFO: {} {}'.format(filename, filesize))
+
+	progress = tqdm.tqdm(range(int(ceil(filesize/8))), "Receiving {}".format(filename), unit="B", unit_scale=True, unit_divisor=8)
+	with open(file_path[1:], "wb") as f:
+		for _ in progress:
+
+			bytes_read = nsocket.recv(8)
+
+			
+			if not bytes_read:
+				break
+
+			f.write(bytes_read)
+			progress.update(len(bytes_read))
+
+	print('[!] RECEIVED FILE {}'.format(filename))
+
+	return filename
 
 def logout(decoded_msg):
 
@@ -92,17 +154,39 @@ def command_resolver(decoded_msg):
 		else:
 			return None
 	else:
+
 		return {
 			'touch' in decoded_msg : create_file,
-			'rm' in decoded_msg : delete_file,
+			'rmfile' in decoded_msg : delete_file,
 			'CODE_END_3085' in decoded_msg : logout,
 			'mkdir' in decoded_msg : create_dir,
 			'rmdir' in decoded_msg : rmdir,
+			'get_file' in decoded_msg or 'upload' in decoded_msg or 'info' in decoded_msg: None,
 		}[True]
+
+def datanode_info_start(client_socket):
+
+	total, used, free = shutil.disk_usage("/")
+	client_socket.sendall(bytes("{}<SEPARATOR>{}<SEPARATOR>{}".format(total, used, free), 'utf8'))
+	time.sleep(1)
+
+def file_info(decoded_msg, nsocket):
+	file_path = decoded_msg.split()[-1]
+	try:
+		file_size = os.path.getsize(file_path[1:])
+	except:
+		print('[w] CANNOT FIND FILE ', file_path)
+
+	nsocket.send(bytes('{} {}'.format(file_path, file_size), 'utf8'))
+
+	time.sleep(1)
+
+
 
 
 while True:
 	(client_socket, addr) = namenode_datanode_socket.accept()
+	datanode_info_start(client_socket)
 	print('[!] GET NEW CONNECTION {}'.format(addr))
 	decoded_msg = ''
 	while True:
@@ -114,14 +198,55 @@ while True:
 			print('[] FOUND NEW COMMAND <{}>'.format(decoded_msg))
 			try:
 				function = command_resolver(decoded_msg)
-				print(function)
-				function(decoded_msg)
+				if function == None:
+					if 'get_file' in decoded_msg:
+						print(send_file)
+						send_file(decoded_msg, client_socket)	
+					elif 'upload' in decoded_msg:
+						print(download_file)
+						download_file(decoded_msg, client_socket)
+					elif 'info' in decoded_msg:
+						print(file_info)
+						file_info(decoded_msg, client_socket)
+				else:
+					print(function)
+					function(decoded_msg)
 			except:
 				print('Fuck, i dont know this command or i am stupid or i got end signal: ', decoded_msg)
 			print('-----------------')
 	print('-----------------')
 	print('[w] LOST CONNECTION WITH NAMENODE')
 	print('-----------------')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
