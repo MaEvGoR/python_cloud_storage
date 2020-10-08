@@ -18,7 +18,8 @@ import time
 6 File copy. 
     file name
 7 File move. 
-    file name & path
+    file name 
+    path
 8 Open directory.
     directory name
 9 Read directory.
@@ -39,6 +40,35 @@ try:
     additional_arg_2 = sys.argv[3]  # path
 except:
     additional_arg_2 = ""
+
+if command == "initialize":
+    command = 0
+elif  command == "file_create":
+    command = 1
+elif command == "file_read": 
+    command = 2
+elif command == "file_write": 
+    command = 3
+elif command == "file_delete":
+    command = 4
+elif command == "file_info": 
+    command = 5
+elif command == "file_copy":
+    command = 6
+elif command == "file_move": 
+    command = 7
+elif command == "open_directory": 
+    command = 8
+elif command == "read_directory":
+    command = 9
+elif command == "make_directory":
+    command = 10
+elif command == "delete_directory":
+    command = 11
+else:
+    print("ERROR: No such command, try again")
+    exit(0)
+command_id = command
 
 if command != "3" and command != "2":
     # client send
@@ -70,7 +100,7 @@ if command != "3" and command != "2":
         need confirmation if there are files in the directory
     """
     # receive resonse
-    if sys.argv[1] != 2:
+    if command_id != 2:
         msg = ""
         while msg == "":
             # print(1)
@@ -79,14 +109,14 @@ if command != "3" and command != "2":
         # confirmation for deleteing directory with files
         decoded_msg = str(msg, "utf8")
         print(decoded_msg)
-        if sys.argv[1] == "11":
+        if command_id == 11:
             temp = input()
             client_socket.send(bytes(temp, "utf8"))
 
     # close
     client_socket.close()
 
-elif sys.argv[1] == "3":
+elif command_id == 3:
     # client send
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_addr = ("10.0.0.11", 2345)

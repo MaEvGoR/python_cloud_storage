@@ -1,7 +1,35 @@
 import socket
-import tqdm
 import os
 import time
+
+def command_name(com):
+    if command == 0:
+        temp = "initialize"
+    elif  command == 1:
+        temp = "file create"
+    elif command == 2: 
+        temp = "file read"
+    elif command == 3:
+        temp = "file write"
+    elif command == 4:
+        temp = "file delete"
+    elif command == 5:
+        temp = "file info"
+    elif command == 6:
+        temp = "file copy"
+    elif command == 7:
+        temp = "file move"
+    elif command == 8:
+        temp = "open directory"
+    elif command == 9:
+        temp = "read directory"
+    elif command == 10:
+        temp = "make directory"
+    elif command == 11:
+        temp = "delete directory"
+        
+    return temp
+
 
 """ it will be revieved from client
 0 Initialize. 
@@ -47,9 +75,11 @@ while True:
             "%"
         )  # argument is file name, directort name and etc.
         command = int(command)
-        print("TO DO: ", command)
-        print("Argument01: ", argument1)
-        print("Argument02: ", argument2)
+        command_description = command_name(command)
+        print("Command id:", command)
+        print("TO DO: ", command_description)
+        print("Argument01 (file/dir name): ", argument1)
+        print("Argument02 (path): ", argument2)
         decoded_msg = ""
 
         # do smth create, get info etc
