@@ -1,6 +1,0 @@
-// client configuration file
-
-{
-	"cloud_dir" : "Here will be directory to mount",
-	"namenode_host": "here will be namenode hostname"
-}
