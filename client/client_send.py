@@ -85,7 +85,7 @@ else:
     exit(0)
 command_id = command
 
-if command != "3" and command != "2":
+if command_id != 3 and command_id != 2:
     # client send
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_addr = ("10.0.0.11", 2345)
@@ -128,15 +128,14 @@ if command != "3" and command != "2":
             temp = input()
             client_socket.send(bytes(temp, "utf8"))
 
-    # close
     client_socket.close()
+
 
 elif command_id == 3:
     # client send
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_addr = ("10.0.0.11", 2345)
     client_socket.connect(server_addr)
-
     command = str(command) + "%"
     command += additional_arg
     command = str(command) + "%"
@@ -150,7 +149,6 @@ elif command_id == 3:
     s = socket.socket()
     PORT = 9898
     s.connect((ServerIp, PORT))
-
     filename = sys.argv[2]
     # We can send file sample.txt
     file = open(filename, "rb")
@@ -161,11 +159,11 @@ elif command_id == 3:
         # Now send the content of sample.txt to server
         s.send(SendData)
         SendData = file.read(1024)
-
     # Close the connection from client side
     s.close()
 else:
-    # client send
+
+    # client receive
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_addr = ("10.0.0.11", 2345)
     client_socket.connect(server_addr)
@@ -176,39 +174,43 @@ else:
     command += additional_arg_2
     client_socket.send(bytes(command, "utf8"))
     print("Sent!")
+    time.sleep(1)
+    msg = ""
+    while msg == "":
+        # print(1)
+        msg = client_socket.recv(1024)
+    msg = str(msg, "utf8")
+    print(msg)
     client_socket.close()
 
-    print("tuta")
-    s = socket.socket()
+    if msg != "No such file":
+        s = socket.socket()
 
-    PORT = 9899
-    s.bind(("10.0.0.100", PORT))
-    s.listen(10)
+        PORT = 9899
+        s.bind(("10.0.0.100", PORT))
+        s.listen(10)
 
-    # Now we can establish connection with clien
-    conn, addr = s.accept()
+        # Now we can establish connection with clien
+        conn, addr = s.accept()
 
-    filename = sys.argv[2]  # should take from client
-    # Open one recv.txt file in write mode
-    file = open(filename, "wb")
-    print("\n Copied file name will be {} at server side\n".format(filename))
+        filename = sys.argv[2]  # should take from client
+        # Open one recv.txt file in write mode
+        file = open(filename, "wb")
 
-    while True:
+        while True:
 
-        # Receive any data from client side
-        RecvData = conn.recv(1024)
-        while RecvData:
-            file.write(RecvData)
+            # Receive any data from client side
             RecvData = conn.recv(1024)
+            while RecvData:
+                file.write(RecvData)
+                RecvData = conn.recv(1024)
 
-        # Close the file opened at server side once copy is completed
-        file.close()
-        print("\n File has been copied successfully \n")
+            # Close the file opened at server side once copy is completed
+            file.close()
 
-        # Close connection with client
-        conn.close()
-        print("\n Server closed the connection \n")
+            # Close connection with client
+            conn.close()
 
-        # Come out from the infinite while loop as the file has been copied from client.
-        break
-    s.close()
+            # Come out from the infinite while loop as the file has been copied from client.
+            break
+        s.close()

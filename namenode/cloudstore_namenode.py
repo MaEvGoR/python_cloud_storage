@@ -7,7 +7,7 @@ import os
 from math import ceil
 
 # with open('cloudstore_namenode_conf.json') as json_file:
-# 	configuration = json.load(json_file)
+#     configuration = json.load(json_file)
 
 
 CURRENT_USER_LOC = ""
@@ -26,18 +26,18 @@ REPLICA_PARAM = 2
 # namenode_datanode2_socket.connect(("10.0.0.13", 20001))
 
 def first_connect(addrs):
-	namenode_datanode_sockets = []
-	start_info = []
-	for addr in addrs:
-		cur_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		cur_socket.connect(addr)
+    namenode_datanode_sockets = []
+    start_info = []
+    for addr in addrs:
+        cur_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        cur_socket.connect(addr)
 
-		total, used, free = map(int, str(cur_socket.recv(1024), 'utf8').split('<SEPARATOR>'))
+        total, used, free = map(int, str(cur_socket.recv(1024), 'utf8').split('<SEPARATOR>'))
 
-		namenode_datanode_sockets.append(cur_socket)
-		start_info.append([(total // (2**30)), (used // (2**30)), (free // (2**30))])
+        namenode_datanode_sockets.append(cur_socket)
+        start_info.append([(total // (2**30)), (used // (2**30)), (free // (2**30))])
 
-	return namenode_datanode_sockets, start_info
+    return namenode_datanode_sockets, start_info
 
 
 
@@ -67,258 +67,261 @@ def find_path(graph, start, end, path=[]):
 
 def init_create_cloudstorage(my_sockets, cloud_dir_name="cloud_dir"):
 
-	global USER_TREE
+    global USER_TREE
 
-	for dsocket in my_sockets:
-		dsocket.send(bytes("init {}".format(cloud_dir_name), "utf8"))
+    for dsocket in my_sockets:
+        dsocket.send(bytes("init {}".format(cloud_dir_name), "utf8"))
 
-	USER_TREE[''] = [cloud_dir_name]
-	USER_TREE[cloud_dir_name] = []
+    USER_TREE[''] = [cloud_dir_name]
+    USER_TREE[cloud_dir_name] = []
 
 
 def create_file(my_sockets, filename="temp_file.txt"):
 
-	global USER_TREE
-	global CURRENT_USER_LOC
+    global USER_TREE
+    global CURRENT_USER_LOC
 
-	req_location = "{}/{}".format(CURRENT_USER_LOC, filename)
-	splitted_path = req_location.split("/")
-	if find_path(USER_TREE, splitted_path[1], splitted_path[-1]):
-		print(USER_TREE)
-		print(splitted_path)
-		return False
-	else:
-		USER_TREE[splitted_path[-2]].append(filename)
+    req_location = "{}/{}".format(CURRENT_USER_LOC, filename)
+    splitted_path = req_location.split("/")
+    if find_path(USER_TREE, splitted_path[1], splitted_path[-1]):
+        print(USER_TREE)
+        print(splitted_path)
+        return False
+    else:
+        USER_TREE[splitted_path[-2]].append(filename)
 
-	for dsocket in my_sockets:
-		dsocket.send(bytes("touch {}".format(req_location), "utf8"))
-	print('[!] SEND COMMAND ', "touch {}".format(req_location))
+    for dsocket in my_sockets:
+        dsocket.send(bytes("touch {}".format(req_location), "utf8"))
+    print('[!] SEND COMMAND ', "touch {}".format(req_location))
 
 def cd(target):
 
-	global CURRENT_USER_LOC
+    global CURRENT_USER_LOC
 
-	splitted_path = CURRENT_USER_LOC.split('/')
-	# / in the end of directory path
-	if target == '..':
-		CURRENT_USER_LOC = ''
-		for i in range(1, len(splitted_path)-1):
-			CURRENT_USER_LOC += '/{}'.format(splitted_path[i])
+    splitted_path = CURRENT_USER_LOC.split('/')
+    # / in the end of directory path
+    if target == '..':
+        CURRENT_USER_LOC = ''
+        for i in range(1, len(splitted_path)-1):
+            CURRENT_USER_LOC += '/{}'.format(splitted_path[i])
 
-		return True
+        return True
 
-	if target == '':
-		CURRENT_USER_LOC = '/' + splitted_path[1]
+    if target == '':
+        CURRENT_USER_LOC = '/' + splitted_path[1]
 
-		return True
+        return True
 
-	if find_path(USER_TREE, splitted_path[-1], target.split('/')[-1]):
-		CURRENT_USER_LOC += '/{}'.format(target)
-	else:
-		print(USER_TREE)
-		print(CURRENT_USER_LOC)
-		print(target)
+    if find_path(USER_TREE, splitted_path[-1], target.split('/')[-1]):
+        CURRENT_USER_LOC += '/{}'.format(target)
+    else:
+        print(USER_TREE)
+        print(CURRENT_USER_LOC)
+        print(target)
 
-		return False
+        return False
 
 
 def delete_file(my_sockets, filename="temp_file.txt"):
 
-	global USER_TREE
-	global CURRENT_USER_LOC
+    global USER_TREE
+    global CURRENT_USER_LOC
 
-	req_location = "{}/{}".format(CURRENT_USER_LOC, filename)
-	splitted_path = req_location.split("/")
-	if filename in USER_TREE[splitted_path[-2]]:
-		USER_TREE[splitted_path[-2]].remove(splitted_path[-1])
-	else:
-		print('[w] Something goes wrong with deleting file {}'.format(filename))
-		return False
+    req_location = "{}/{}".format(CURRENT_USER_LOC, filename)
+    splitted_path = req_location.split("/")
+    if filename in USER_TREE[splitted_path[-2]]:
+        USER_TREE[splitted_path[-2]].remove(splitted_path[-1])
+    else:
+        print('[w] Something goes wrong with deleting file {}'.format(filename))
+        return False
 
-	for dsocket in my_sockets:
-		dsocket.send(bytes("rmfile {}".format(req_location), "utf8"))
-	print('[!] SEND COMMAND ', "rmfile {}".format(req_location))
+    for dsocket in my_sockets:
+        dsocket.send(bytes("rmfile {}".format(req_location), "utf8"))
+    print('[!] SEND COMMAND ', "rmfile {}".format(req_location))
 
 def mkdir(my_sockets, dir_name="name_dir"):
 
-	global USER_TREE
+    global USER_TREE
 
-	req_location = "{}/{}".format(CURRENT_USER_LOC, dir_name)
-	splitted_path = req_location.split('/')
-	if find_path(USER_TREE, splitted_path[1], splitted_path[-2]):
-		USER_TREE[splitted_path[-2]].append(splitted_path[-1])
-		USER_TREE[dir_name] = []
-	else:
-		print('[w] Something goes wrong with creating directory {}'.format(filename))
-		return False
-	for dsocket in my_sockets:
-		dsocket.send(bytes("mkdir {}".format(req_location), "utf8"))
-	print('[!] SEND COMMAND ', "mkdir {}".format(req_location))
+    req_location = "{}/{}".format(CURRENT_USER_LOC, dir_name)
+    splitted_path = req_location.split('/')
+    if find_path(USER_TREE, splitted_path[1], splitted_path[-2]):
+        USER_TREE[splitted_path[-2]].append(splitted_path[-1])
+        USER_TREE[dir_name] = []
+    else:
+        print('[w] Something goes wrong with creating directory {}'.format(filename))
+        return False
+    for dsocket in my_sockets:
+        dsocket.send(bytes("mkdir {}".format(req_location), "utf8"))
+    print('[!] SEND COMMAND ', "mkdir {}".format(req_location))
 
 def rmdir(my_sockets, dir_name="name_dir"):
 
-	global USER_TREE
+    global USER_TREE
 
-	req_location = "{}/{}".format(CURRENT_USER_LOC, dir_name)
-	splitted_path = req_location.split('/')
-	if find_path(USER_TREE, splitted_path[1], splitted_path[-1]):
-		USER_TREE[splitted_path[-2]].remove(splitted_path[-1])
-		USER_TREE.pop(splitted_path[-1], None)
-	else:
-		print('[w] Something goes wrong with deleting directory {}'.format(splitted_path[-1]))
-		return False
-	for dsocket in my_sockets:
-		dsocket.send(bytes("rmdir {}".format(req_location), 'utf8'))
-	print('[!] SEND COMMAND ', "rmdir {}".format(req_location))
+    req_location = "{}/{}".format(CURRENT_USER_LOC, dir_name)
+    splitted_path = req_location.split('/')
+    if find_path(USER_TREE, splitted_path[1], splitted_path[-1]):
+        USER_TREE[splitted_path[-2]].remove(splitted_path[-1])
+        USER_TREE.pop(splitted_path[-1], None)
+    else:
+        print('[w] Something goes wrong with deleting directory {}'.format(splitted_path[-1]))
+        return False
+    for dsocket in my_sockets:
+        dsocket.send(bytes("rmdir {}".format(req_location), 'utf8'))
+    print('[!] SEND COMMAND ', "rmdir {}".format(req_location))
 
 def lost_user(my_sockets):
 
-	global USER_TREE
-	global CURRENT_USER_LOC
+    global USER_TREE
+    global CURRENT_USER_LOC
 
-	print('[w] I lost my user. Sending signal to datanodes.')
-	for dsocket in my_sockets:
-		dsocket.send(bytes('CODE_END_3085', 'utf8'))
-	USER_TREE = {'':''}
-	CURRENT_USER_LOC = ''
+    print('[w] I lost my user. Sending signal to datanodes.')
+    for dsocket in my_sockets:
+        dsocket.send(bytes('CODE_END_3085', 'utf8'))
+    USER_TREE = {'':''}
+    CURRENT_USER_LOC = ''
 
 def get_file(my_sockets, filename="temp_file.txt"):
 
-	global USER_TREE
-	global CURRENT_USER_LOC
+    global USER_TREE
+    global CURRENT_USER_LOC
 
-	req_location = "{}/{}".format(CURRENT_USER_LOC, filename)
-	splitted_path = req_location.split('/')
-	if find_path(USER_TREE, splitted_path[1], splitted_path[-2]) and splitted_path[-1] in USER_TREE[splitted_path[-2]]:
-		pass
-	else:
-		print('[w] Something goes wrong with downloading file {}'.format(splitted_path[-1]))
-		return False
+    req_location = "{}/{}".format(CURRENT_USER_LOC, filename)
+    splitted_path = req_location.split('/')
+    if find_path(USER_TREE, splitted_path[1], splitted_path[-2]) and splitted_path[-1] in USER_TREE[splitted_path[-2]]:
+        pass
+    else:
+        print('[w] Something goes wrong with downloading file {}'.format(splitted_path[-1]))
+        return False
 
-	dsocket = random.choice(my_sockets)
-	dsocket.send(bytes('get_file {}'.format(req_location), 'utf8'))
+    dsocket = random.choice(my_sockets)
+    dsocket.send(bytes('get_file {}'.format(req_location), 'utf8'))
 
-	print('[!] SEND COMMAND get_file {}'.format(req_location))
-	print('[!] WAITING FOR THE FILE {}'.format(req_location))
+    print('[!] SEND COMMAND get_file {}'.format(req_location))
+    print('[!] WAITING FOR THE FILE {}'.format(req_location))
 
-	time.sleep(1)
+    time.sleep(1)
 
 
-	# get info about file
-	info_msg = str(dsocket.recv(1024), 'utf8')
-	filename, filesize = info_msg.split('<SEPARATOR>')
+    # get info about file
+    info_msg = str(dsocket.recv(1024), 'utf8')
+    filename, filesize = info_msg.split('<SEPARATOR>')
 
-	print('[!] GET INFO: {} {}'.format(filename, filesize))
+    print('[!] GET INFO: {} {}'.format(filename, filesize))
 
-	filesize = int(filesize)
-	filename = os.path.basename(filename)
+    filesize = int(filesize)
+    filename = os.path.basename(filename)
 
-	progress = tqdm.tqdm(range(int(ceil(filesize/8))), "Receiving {}".format(filename), unit="B", unit_scale=True, unit_divisor=8)
-	with open(filename, "wb") as f:
-		for _ in progress:
+    progress = tqdm.tqdm(range(int(ceil(filesize/8))), "Receiving {}".format(filename), unit="B", unit_scale=True, unit_divisor=8)
+    with open(filename, "wb") as f:
+        for _ in progress:
 
-			bytes_read = dsocket.recv(8)
-			if not bytes_read:
-				break
-			f.write(bytes_read)
-			progress.update(len(bytes_read))
+            bytes_read = dsocket.recv(8)
+            if not bytes_read:
+                break
+            f.write(bytes_read)
+            progress.update(len(bytes_read))
 
-	print('[!] RECIEVED FILE {}'.format(filename))
+    print('[!] RECIEVED FILE {}'.format(filename))
 
-	return filename
+    return filename
 
 
 def upload_file(my_sockets, local_fname="tempfile.txt", server_filename="tempfile.txt"):
 
-	global USER_TREE
-	global CURRENT_USER_LOC
+    global USER_TREE
+    global CURRENT_USER_LOC
 
-	req_location = "{}/{}".format(CURRENT_USER_LOC, server_filename)
-	splitted_path = req_location.split('/')
+    req_location = "{}/{}".format(CURRENT_USER_LOC, server_filename)
+    splitted_path = req_location.split('/')
 
-	if find_path(USER_TREE, splitted_path[1], splitted_path[-2]):
-		pass
-	else:
-		print('[w] Something goes wrong with uploading file {}'.format(splitted_path[-1]))
-		return False
+    if find_path(USER_TREE, splitted_path[1], splitted_path[-2]):
+        pass
+    else:
+        print('[w] Something goes wrong with uploading file {}'.format(splitted_path[-1]))
+        return False
 
-	if splitted_path[-1] in USER_TREE[splitted_path[-2]]:
-		delete_file(my_sockets, server_path)
+    if splitted_path[-1] in USER_TREE[splitted_path[-2]]:
+        delete_file(my_sockets, server_path)
 
-	for dsocket in my_sockets:
-		dsocket.send(bytes('upload {}'.format(req_location), 'utf8'))
+    for dsocket in my_sockets:
+        dsocket.send(bytes('upload {}'.format(req_location), 'utf8'))
 
-	print('[!] Send upload {}'.format(req_location))
+    print('[!] Send upload {}'.format(req_location))
 
-	time.sleep(1)
+    time.sleep(1)
 
-	file_path = local_fname
-	file_size = os.path.getsize(file_path)
+    file_path = local_fname
+    file_size = os.path.getsize(file_path)
 
-	try:
+    try:
 
-		for dsocket in my_sockets:
-			dsocket.send(bytes("{}<SEPARATOR>{}".format(file_path, file_size), 'utf8'))
+        for dsocket in my_sockets:
+            dsocket.send(bytes("{}<SEPARATOR>{}".format(file_path, file_size), 'utf8'))
 
-		time.sleep(1)
+        time.sleep(1)
 
-		progress = tqdm.tqdm(range(int(ceil(file_size/8))), "Sending {}".format(file_path), unit="B", unit_scale=True, unit_divisor=8)
-		with open(local_fname, 'rb') as f:
-				for _ in progress:
-					bytes_read = f.read(8)
-					
-					if not bytes_read:
-						break
+        
+        progress = tqdm.tqdm(range(int(ceil(file_size/8))), "Sending {}".format(file_path), unit="B", unit_scale=True, unit_divisor=8)
+        with open(local_fname, 'rb') as f:
+                for _ in progress:
+                    bytes_read = f.read(8)
+                    
+                    if not bytes_read:
+                        break
 
-					for dsocket in my_sockets:
-						dsocket.sendall(bytes_read)
+                    for dsocket in my_sockets:
+                        dsocket.sendall(bytes_read)
 
-					progress.update(len(bytes_read))
-		print('[!] Upload  file {}'.format(file_path))
-	except:
-		print('[w] Something goes wrong with uploading file {}')
+                    progress.update(len(bytes_read))
+        USER_TREE[splitted_path[-2]].append(splitted_path[-1])
+        print('[!] Upload  file {}'.format(file_path))
+        
+    except:
+        print('[w] Something goes wrong with uploading file {}')
 
 
 def file_info(my_sockets, filename="tempfile.txt"):
 
-	global USER_TREE
-	global CURRENT_USER_LOC
+    global USER_TREE
+    global CURRENT_USER_LOC
 
-	req_location = "{}/{}".format(CURRENT_USER_LOC, filename)
-	splitted_path = req_location.split('/')
-	if find_path(USER_TREE, splitted_path[1], splitted_path[-2]) and splitted_path[-1] in USER_TREE[splitted_path[-2]]:
-		pass
-	else:
-		print('[w] Something goes wrong with information about file {}'.format(splitted_path[-1]))
-		return False
+    req_location = "{}/{}".format(CURRENT_USER_LOC, filename)
+    splitted_path = req_location.split('/')
+    if find_path(USER_TREE, splitted_path[1], splitted_path[-2]) and splitted_path[-1] in USER_TREE[splitted_path[-2]]:
+        pass
+    else:
+        print('[w] Something goes wrong with information about file {}'.format(splitted_path[-1]))
+        return False
 
-	info = []
+    info = []
 
-	print('[!] Send info {}'.format(req_location))
+    print('[!] Send info {}'.format(req_location))
 
-	for dsocket in my_sockets:
-		dsocket.send(bytes('info {}'.format(req_location), 'utf8'))
+    for dsocket in my_sockets:
+        dsocket.send(bytes('info {}'.format(req_location), 'utf8'))
 
-		response = str(dsocket.recv(1024), 'utf8').split()
+        response = str(dsocket.recv(1024), 'utf8').split()
 
-		info.append(response)
+        info.append(response)
 
-	return info
+    return info
 
 def files_list_in_dir(dir_name): #ls
-	global USER_TREE
+    global USER_TREE
 
-	files_list = USER_TREE[dir_name]
-	return files_list
+    files_list = USER_TREE[dir_name]
+    return files_list
 
 def check_dir_files(dir_name):
-	global USER_TREE
+    global USER_TREE
 
-	temp = len(USER_TREE[dir_name])
-	if temp != 0:
-		return 1
-	else:
-		return 0
+    temp = len(USER_TREE[dir_name])
+    if temp != 0:
+        return 1
+    else:
+        return 0
 
 def command_name(com):
     if command == 0:
@@ -405,37 +408,55 @@ while True:
         response = ""
         if command == 0:
             # get size of the file
-            pass
+            lost_user(namenode_datanode_sockets)
+            init_create_cloudstorage(namenode_datanode_sockets, "new_cloud_dir")
+            cd("new_cloud_dir")
+            response += "Total size {} \n".format(datanodes_start_info[0][0])
+            response += "Used size {} \n".format(datanodes_start_info[0][1])
+            response += "Available size {} \n".format(datanodes_start_info[0][2])
+
+            # pass
         elif command == 1:
             # create file
             create_file(namenode_datanode_sockets, argument1)
             response = "File {} is created".format(argument1)
             # pass
         elif command == 2:
-            time.sleep(2)
-            # send FILE
-            ServerIp = "10.0.0.100"
-            s = socket.socket()
-            PORT = 9899
-            s.connect((ServerIp, PORT))
+            file_name_get = get_file(namenode_datanode_sockets, argument1)
+            if file_name_get == False:
+                response = "No such file"
+                client_socket.send(bytes(response, "utf8"))
 
-            filename = argument1
-            # We can send file sample.txt
-            file = open(filename, "rb")
-            SendData = file.read(1024)
+            else:
+                response = "File {}".format(argument1)
+                client_socket.send(bytes(response, "utf8"))
+                filename = argument1
 
-            while SendData:
-                # Now we can receive data from server
-                # Now send the content of sample.txt to server
-                s.send(SendData)
+                time.sleep(2)
+                ServerIp = "10.0.0.100"
+                s = socket.socket()
+                PORT = 9899
+                s.connect((ServerIp, PORT))
+
+                # We can send file sample.txt
+                file = open(filename, "rb")
                 SendData = file.read(1024)
 
-            # Close the connection from client side
-            s.close()
-            # pass
+                while SendData:
+                    # Now we can receive data from server
+                    # Now send the content of sample.txt to server
+                    s.send(SendData)
+                    SendData = file.read(1024)
+
+                # Close the connection from client side
+                s.close()
+                # pass
+            # send FILE
+
         elif command == 3:
+
             s = socket.socket()
-            print("tut")
+
             PORT = 9898
             s.bind(("10.0.0.11", PORT))
             s.listen(10)
@@ -466,6 +487,8 @@ while True:
 
                 # Come out from the infinite while loop as the file has been copied from client.
                 break
+            time.sleep(1)
+            upload_file(namenode_datanode_sockets, argument1, argument1)
             # s.close()
             # pass
         elif command == 4:
@@ -480,21 +503,29 @@ while True:
             response += '{} info:\n'.format(argument1)
 
             for i in range(len(datanodes)):
-            	response += "-"*len("host : {}\n".format(datanodes[i][0])) + "\n"
-            	response += "host : {}\n".format(datanodes[i][0])
-            	response += "\t path : {}\n".format(f_info[i][0])
-            	response += "\t size : {}\n".format(f_info[i][1])
-            	response += "-"*len("host : {}\n".format(datanodes[i][0])) + "\n"
+                response += "-"*len("host : {}\n".format(datanodes[i][0])) + "\n"
+                response += "host : {}\n".format(datanodes[i][0])
+                response += "\t path : {}\n".format(f_info[i][0])
+                response += "\t size : {}\n".format(f_info[i][1])
+                response += "-"*len("host : {}\n".format(datanodes[i][0])) + "\n"
 
         elif command == 6:
             #Create cope of the file
             temp_name_file = argument1 + "-copy"
-            create_file(namenode_datanode_sockets, argument1)
+            create_file(namenode_datanode_sockets, temp_name_file)
             response = "Copy of file {} created as {}".format(argument1, temp_name_file)
             # pass
         elif command == 7:
             #file move (filename, path)
-            pass
+            #get file
+            #cd 
+            # upload 
+            get_file(namenode_datanode_sockets, argument1)
+            delete_file(namenode_datanode_sockets, argument1)
+            cd(argument2)
+            upload_file(namenode_datanode_sockets, argument1, argument1)
+            response = "File {} moved to {}".format(argument1, argument2)
+            # pass
         elif command == 8:
             #open directore / CD
             cd(argument1)
