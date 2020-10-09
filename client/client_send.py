@@ -188,7 +188,7 @@ else:
     # Now we can establish connection with clien
     conn, addr = s.accept()
 
-    filename = "new_" + sys.argv[2]  # should take from client
+    filename = sys.argv[2]  # should take from client
     # Open one recv.txt file in write mode
     file = open(filename, "wb")
     print("\n Copied file name will be {} at server side\n".format(filename))
