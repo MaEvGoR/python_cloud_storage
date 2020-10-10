@@ -379,15 +379,38 @@ time.sleep(1)
 
 
 # server recieve
-server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+first_server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server_addr = ("10.0.0.11", 2345)
-server_socket.bind(server_addr)
-server_socket.listen(1)
+first_server_socket.bind(server_addr)
+first_server_socket.listen(1)
+first_server_socket.settimeout(2) #
+
+second_server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server_addr2 = ("10.0.0.11", 2346)
+second_server_socket.bind(server_addr2)
+second_server_socket.listen(1)
+second_server_socket.settimeout(2) #
+
+
 
 while True:
     time.sleep(1)
     # receive command and arguments
-    (client_socket, addr) = server_socket.accept()
+
+    # while not stopped:
+    socket_flag = -1
+    while socket_flag == -1:
+        try:
+            (client_socket, addr) = first_server_socket.accept()
+            socket_flag = 0
+        except:
+            pass
+        try:
+            (client_socket, addr) = second_server_socket.accept()
+            socket_flag = 1
+        except:
+            pass
+
     msg = client_socket.recv(1024)
     decoded_msg = str(msg, "utf8")
     if decoded_msg != "":
@@ -433,9 +456,14 @@ while True:
                 filename = argument1
 
                 time.sleep(2)
-                ServerIp = "10.0.0.100"
+                if socket_flag == 0:
+                    ServerIp = "10.0.0.100"
+                    PORT = 9899
+                else:
+                    ServerIp = "10.0.0.101"
+                    PORT = 9899
                 s = socket.socket()
-                PORT = 9899
+                
                 s.connect((ServerIp, PORT))
 
                 # We can send file sample.txt
@@ -574,90 +602,90 @@ while True:
         if command != 2 and command != 3:
             client_socket.send(bytes(response, "utf8"))
 
-    # server_socket.close()
+    # first_server_socket.close()
 
 
-server_socket.close()
+first_server_socket.close()
 
 
 
-# # create file in this directory
-# create_file(namenode_datanode_sockets, filename="tempfile.txt")
+# # # create file in this directory
+# # create_file(namenode_datanode_sockets, filename="tempfile.txt")
 
-mkdir(namenode_datanode_sockets, dir_name="new_dir1")
-
-time.sleep(1)
-
-cd("new_dir1")
-
-time.sleep(1)
-
-create_file(namenode_datanode_sockets, filename='smth.txt')
-
-time.sleep(1)
-
-cd('..')
-
-time.sleep(1)
-
-create_file(namenode_datanode_sockets, filename='smth2.txt')
-
-time.sleep(1)
-
-mkdir(namenode_datanode_sockets, dir_name="new_dir2")
-
-time.sleep(1)
-
-cd("new_dir2")
-
-time.sleep(1)
-
-mkdir(namenode_datanode_sockets, dir_name="new_dir3")
-
-time.sleep(1)
-
-create_file(namenode_datanode_sockets, filename='smth3.txt')
-
-time.sleep(1)
-
-cd("new_dir3")
-
-time.sleep(1)
-
-upload_file(namenode_datanode_sockets, local_fname="tempfile.txt", server_filename="tempfile.txt")
-
-time.sleep(1)
-
-cd('..')
-
-time.sleep(1)
-
-cd('..')
-
-time.sleep(1)
-
-rmdir(namenode_datanode_sockets, dir_name="new_dir1")
-
-time.sleep(1)
-
-print(file_info(namenode_datanode_sockets, filename='smth2.txt'))
-
-# delete this file
-# delete_file(namenode_datanode_sockets[0], filename="tempfile.txt")
+# mkdir(namenode_datanode_sockets, dir_name="new_dir1")
 
 # time.sleep(1)
 
-# mkdir(namenode_datanode_sockets, dir_name="my_new_dir")
+# cd("new_dir1")
 
 # time.sleep(1)
 
-# mkdir(namenode_datanode_sockets, dir_name="my_new_dir2")
+# create_file(namenode_datanode_sockets, filename='smth.txt')
 
 # time.sleep(1)
 
-# rmdir(namenode_datanode_sockets, dir_name="my_new_dir")
+# cd('..')
 
 # time.sleep(1)
+
+# create_file(namenode_datanode_sockets, filename='smth2.txt')
+
+# time.sleep(1)
+
+# mkdir(namenode_datanode_sockets, dir_name="new_dir2")
+
+# time.sleep(1)
+
+# cd("new_dir2")
+
+# time.sleep(1)
+
+# mkdir(namenode_datanode_sockets, dir_name="new_dir3")
+
+# time.sleep(1)
+
+# create_file(namenode_datanode_sockets, filename='smth3.txt')
+
+# time.sleep(1)
+
+# cd("new_dir3")
+
+# time.sleep(1)
+
+# upload_file(namenode_datanode_sockets, local_fname="tempfile.txt", server_filename="tempfile.txt")
+
+# time.sleep(1)
+
+# cd('..')
+
+# time.sleep(1)
+
+# cd('..')
+
+# time.sleep(1)
+
+# rmdir(namenode_datanode_sockets, dir_name="new_dir1")
+
+# time.sleep(1)
+
+# print(file_info(namenode_datanode_sockets, filename='smth2.txt'))
+
+# # delete this file
+# # delete_file(namenode_datanode_sockets[0], filename="tempfile.txt")
+
+# # time.sleep(1)
+
+# # mkdir(namenode_datanode_sockets, dir_name="my_new_dir")
+
+# # time.sleep(1)
+
+# # mkdir(namenode_datanode_sockets, dir_name="my_new_dir2")
+
+# # time.sleep(1)
+
+# # rmdir(namenode_datanode_sockets, dir_name="my_new_dir")
+
+# # time.sleep(1)
 
 
 
