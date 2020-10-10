@@ -380,7 +380,7 @@ time.sleep(1)
 
 # server recieve
 first_server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server_addr = ("10.0.0.11", 2345)
+first_server_addr = ("10.0.0.11", 2345)
 first_server_socket.bind(server_addr)
 first_server_socket.listen(1)
 first_server_socket.settimeout(2) #
@@ -602,10 +602,10 @@ while True:
         if command != 2 and command != 3:
             client_socket.send(bytes(response, "utf8"))
 
-    # first_server_socket.close()
+    # server_socket.close()
 
 
-first_server_socket.close()
+server_socket.close()
 
 
 
