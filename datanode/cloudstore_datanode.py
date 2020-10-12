@@ -144,6 +144,15 @@ def logout(decoded_msg):
 	global MAIN_DIR
 	MAIN_DIR = ''
 
+def restore_other_datanode(decoded_msg):
+
+	global MAIN_DIR
+
+	target_host = decoded_msg.split()[-1]
+
+	os.system('scp -r {} vagrant@{}:'.format(MAIN_DIR, target_host))
+
+
 
 def command_resolver(decoded_msg):
 
@@ -159,6 +168,7 @@ def command_resolver(decoded_msg):
 			'touch' in decoded_msg : create_file,
 			'rmfile' in decoded_msg : delete_file,
 			'CODE_END_3085' in decoded_msg : logout,
+			'CODE_RESTORE_4513' in decoded_msg : restore_other_datanode,
 			'mkdir' in decoded_msg : create_dir,
 			'rmdir' in decoded_msg : rmdir,
 			'get_file' in decoded_msg or 'upload' in decoded_msg or 'info' in decoded_msg: None,
@@ -185,70 +195,57 @@ def file_info(decoded_msg, nsocket):
 
 
 while True:
-	(client_socket, addr) = namenode_datanode_socket.accept()
+	try:
+		(client_socket, addr) = namenode_datanode_socket.accept()
+	except KeyboardInterrupt:
+		client_socket.send(bytes('SHUT_UP', 'utf8'))
+		namenode_datanode_socket.shutdown(socket.SHUT_RDWR)
+		namenode_datanode_socket.close()
+		exit(0)
+
 	datanode_info_start(client_socket)
 	print('[!] GET NEW CONNECTION {}'.format(addr))
 	decoded_msg = ''
-	while True:
-		msg = client_socket.recv(1024)
-
-		decoded_msg = str(msg, 'utf8')
-
-		if decoded_msg != '':
-			print('[] FOUND NEW COMMAND <{}>'.format(decoded_msg))
+	try:
+		while True:
 			try:
-				function = command_resolver(decoded_msg)
-				if function == None:
-					if 'get_file' in decoded_msg:
-						print(send_file)
-						send_file(decoded_msg, client_socket)	
-					elif 'upload' in decoded_msg:
-						print(download_file)
-						download_file(decoded_msg, client_socket)
-					elif 'info' in decoded_msg:
-						print(file_info)
-						file_info(decoded_msg, client_socket)
-				else:
-					print(function)
-					function(decoded_msg)
+				msg = client_socket.recv(1024)
 			except:
-				print('Fuck, i dont know this command or i am stupid or i got end signal: ', decoded_msg)
-			print('-----------------')
+				break
+
+			decoded_msg = str(msg, 'utf8')
+
+			if decoded_msg != '':
+				if 'test_message' in decoded_msg:
+					client_socket.send(bytes('response', 'utf8'))
+					decoded_msg = decoded_msg.split('test_message')[1]
+
+				if decoded_msg == '':
+					continue
+
+				print('[] FOUND NEW COMMAND <{}>'.format(decoded_msg))
+				try:
+					function = command_resolver(decoded_msg)
+					if function == None:
+						if 'get_file' in decoded_msg:
+							print(send_file)
+							send_file(decoded_msg, client_socket)	
+						elif 'upload' in decoded_msg:
+							print(download_file)
+							download_file(decoded_msg, client_socket)
+						elif 'info' in decoded_msg:
+							print(file_info)
+							file_info(decoded_msg, client_socket)
+					else:
+						print(function)
+						function(decoded_msg)
+				except:
+					print('Fuck, i dont know this command or i am stupid or i got end signal: ', decoded_msg)
+				print('-----------------')
+	except KeyboardInterrupt:
+		namenode_datanode_socket.close()
+		exit(0)
+
 	print('-----------------')
 	print('[w] LOST CONNECTION WITH NAMENODE')
 	print('-----------------')
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
